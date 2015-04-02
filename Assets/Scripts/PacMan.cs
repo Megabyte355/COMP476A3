@@ -12,13 +12,21 @@ public class PacMan : MonoBehaviour
     [SerializeField]
     float boostMoveSpeed = 7.0f;
 
-    void Start()
+    void Awake()
     {
         waka = GetComponent<AudioSource>();
+        if(!networkView.isMine)
+        {
+            GetComponent<AudioListener>().enabled = false;
+        }
     }
 
     void Update ()
     {
+        if(!networkView.isMine)
+        {
+            return;
+        }
 
         float speed = baseMoveSpeed;
 
@@ -39,6 +47,22 @@ public class PacMan : MonoBehaviour
             direction = Vector3.right;
         }
         transform.Translate(direction * speed * Time.deltaTime);
+    }
+
+    void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo info)
+    {
+        Vector3 networkPosition = Vector3.zero;
+
+        if(stream.isWriting)
+        {
+            networkPosition = transform.position;
+            stream.Serialize(ref networkPosition);
+        }
+        if(stream.isReading)
+        {
+            stream.Serialize(ref networkPosition);
+            transform.position = networkPosition;
+        }
     }
 
     public void EatPacDot()

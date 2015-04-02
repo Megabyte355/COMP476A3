@@ -3,15 +3,13 @@ using System.Collections;
 
 public class PacDot : MonoBehaviour
 {
-    // Use this for initialization
-    void Start ()
+    void OnTriggerEnter(Collider collider)
     {
-    
+        if(collider.tag == "PacMan")
+        {
+            collider.GetComponent<PacMan>().EatPacDot();
+            Destroy (gameObject);
+        }
     }
-    
-    // Update is called once per frame
-    void Update ()
-    {
-    
-    }
+
 }

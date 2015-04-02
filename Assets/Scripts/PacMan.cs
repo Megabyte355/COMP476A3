@@ -6,6 +6,7 @@ public class PacMan : MonoBehaviour
 
     private Vector3 direction = Vector3.zero;
     private AudioSource waka;
+    private Score score;
     [SerializeField]
     float baseMoveSpeed = 3.5f;
 
@@ -14,6 +15,7 @@ public class PacMan : MonoBehaviour
 
     void Awake()
     {
+        score = GameObject.FindGameObjectWithTag("Score").GetComponent<Score>();
         waka = GetComponent<AudioSource>();
         if(!networkView.isMine)
         {
@@ -68,6 +70,14 @@ public class PacMan : MonoBehaviour
     public void EatPacDot()
     {
         // Award points
+        if(networkView.isMine)
+        {
+            score.IncrementScore();
+        }
+        else
+        {
+            score.IncrementOpponentScore();
+        }
 
         // Play sound
         waka.Play ();

@@ -8,6 +8,7 @@ public class PacMan : MonoBehaviour
     private AudioSource wakaSound;
     private AudioSource powerUpSound;
     private Score score;
+    private Transform model;
 
     [SerializeField]
     float baseMoveSpeed = 3.5f;
@@ -20,6 +21,7 @@ public class PacMan : MonoBehaviour
     void Awake()
     {
         score = GameObject.FindGameObjectWithTag("Score").GetComponent<Score>();
+        model = transform.FindChild("PacManModel");
 
         AudioSource[] audio = GetComponents<AudioSource>();
         wakaSound = audio[0];
@@ -65,7 +67,12 @@ public class PacMan : MonoBehaviour
         {
             direction = Vector3.right;
         }
-        transform.Translate(direction * speed * Time.deltaTime);
+
+        if(direction != null)
+        {
+            model.transform.LookAt(transform.position + direction);
+            transform.Translate(direction * speed * Time.deltaTime);
+        }
     }
 
     void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo info)

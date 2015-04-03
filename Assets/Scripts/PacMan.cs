@@ -7,8 +7,10 @@ public class PacMan : MonoBehaviour
     private Vector3 direction = Vector3.zero;
     private AudioSource wakaSound;
     private AudioSource powerUpSound;
+    private AudioSource deathSound;
     private Score score;
     private Transform model;
+    private GameObject spawnPoint;
 
     [SerializeField]
     float baseMoveSpeed = 3.5f;
@@ -22,10 +24,12 @@ public class PacMan : MonoBehaviour
     {
         score = GameObject.FindGameObjectWithTag("Score").GetComponent<Score>();
         model = transform.FindChild("PacManModel");
+        spawnPoint = GameObject.Find ("SpawnPoint");
 
         AudioSource[] audio = GetComponents<AudioSource>();
         wakaSound = audio[0];
         powerUpSound = audio[1];
+        deathSound = audio[2];
 
         if(!networkView.isMine)
         {
@@ -68,9 +72,9 @@ public class PacMan : MonoBehaviour
             direction = Vector3.right;
         }
 
-        if(direction != null)
+        if(direction != Vector3.zero)
         {
-            model.transform.LookAt(transform.position + direction);
+            ChangeOrientation(transform.position + direction);
             transform.Translate(direction * speed * Time.deltaTime);
         }
     }
@@ -91,9 +95,24 @@ public class PacMan : MonoBehaviour
         }
     }
 
+    void OnCollisionEnter(Collision collision)
+    {
+        if(collision.transform.tag == "PacGhost")
+        {
+            deathSound.Play ();
+            TeleportToSpawnPoint();
+        }
+    }
+
     void BoostSpeed()
     {
         timer = boostDuration;
+    }
+
+    void ChangeOrientation(Vector3 lookAtPoint)
+    {
+        model.transform.LookAt(lookAtPoint);
+        networkView.RPC("ChangePacManOrientationNetwork", RPCMode.OthersBuffered, lookAtPoint);
     }
 
     public void EatPacDot()
@@ -127,5 +146,23 @@ public class PacMan : MonoBehaviour
         
         // Play sound
         powerUpSound.Play();
+    }
+
+    void TeleportToSpawnPoint()
+    {
+        transform.position = spawnPoint.transform.position;
+        networkView.RPC("TeleportToSpawnPointNetwork", RPCMode.OthersBuffered);
+    }
+
+    [RPC]
+    void TeleportToSpawnPointNetwork()
+    {
+        transform.position = spawnPoint.transform.position;
+    }
+
+    [RPC]
+    void ChangePacManOrientationNetwork(Vector3 lookAtPoint)
+    {
+        model.transform.LookAt(lookAtPoint);
     }
 }

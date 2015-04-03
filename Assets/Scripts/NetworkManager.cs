@@ -13,6 +13,9 @@ public class NetworkManager : MonoBehaviour
     
     public GameObject pacManPrefab;
     public Transform spawnLocation;
+
+    public GameObject ghostPrefab;
+    public Transform ghostSpawnLocation;
     
     void Start ()
     {
@@ -48,6 +51,7 @@ public class NetworkManager : MonoBehaviour
     void OnServerInitialized ()
     {
         SpawnPlayer ();
+        SpawnGhost ();
     }
     
     public void JoinIP (string ip, string port)
@@ -71,7 +75,20 @@ public class NetworkManager : MonoBehaviour
     {
         Network.Instantiate (pacManPrefab, spawnLocation.position, Quaternion.identity, 0);
     }
-    
+
+    private void SpawnGhost ()
+    {
+        GameObject g1 = Network.Instantiate (ghostPrefab, ghostSpawnLocation.position, Quaternion.identity, 0) as GameObject;
+        GameObject g2 = Network.Instantiate (ghostPrefab, ghostSpawnLocation.position + Vector3.forward, Quaternion.identity, 0) as GameObject;
+        GameObject g3 = Network.Instantiate (ghostPrefab, ghostSpawnLocation.position - Vector3.right, Quaternion.identity, 0) as GameObject;
+        GameObject g4 = Network.Instantiate (ghostPrefab, ghostSpawnLocation.position + Vector3.right, Quaternion.identity, 0) as GameObject;
+
+        g1.GetComponent<PacGhost>().SetColor(Color.red);
+        g2.GetComponent<PacGhost>().SetColor(Color.blue);
+        g3.GetComponent<PacGhost>().SetColor(Color.yellow);
+        g4.GetComponent<PacGhost>().SetColor(Color.green);
+    }
+
     void OnPlayerConnected (NetworkPlayer player)
     {
         Debug.Log ("Player " + (++playerCount) + " connected from " + player.ipAddress + ":" + player.port);

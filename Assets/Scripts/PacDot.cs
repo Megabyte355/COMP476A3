@@ -11,5 +11,4 @@ public class PacDot : MonoBehaviour
             Destroy (gameObject);
         }
     }
-
 }

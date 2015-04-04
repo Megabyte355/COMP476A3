@@ -18,7 +18,10 @@ public class PacMan : MonoBehaviour
     float boostMoveSpeed = 7.0f;
     [SerializeField]
     float boostDuration = 10.0f;
-    float timer;
+    float boostTimer;
+    [SerializeField]
+    float respawnDuration = 3.0f;
+    float respawnTimer;
 
     void Awake()
     {
@@ -44,10 +47,24 @@ public class PacMan : MonoBehaviour
             return;
         }
 
-        float speed;
-        if(timer >= 0.0f)
+        if(respawnTimer >= 0.0f)
         {
-            timer -= Time.deltaTime;
+            respawnTimer -= Time.deltaTime;
+
+            if(respawnTimer < 0.0f)
+            {
+                networkView.RPC("Respawn", RPCMode.AllBuffered);
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        float speed;
+        if(boostTimer >= 0.0f)
+        {
+            boostTimer -= Time.deltaTime;
             speed = boostMoveSpeed;
         }
         else
@@ -55,19 +72,19 @@ public class PacMan : MonoBehaviour
             speed = baseMoveSpeed;
         }
 
-        if(Input.GetKeyDown(KeyCode.W))
+        if(Input.GetKey(KeyCode.W) && !Physics.Raycast(transform.position, Vector3.forward, 0.75f, 1 << 9))
         {
             direction = Vector3.forward;
         }
-        else if(Input.GetKeyDown(KeyCode.S))
+        else if(Input.GetKey(KeyCode.S) && !Physics.Raycast(transform.position, -Vector3.forward, 0.75f, 1 << 9))
         {
             direction = -Vector3.forward;
         }
-        else if(Input.GetKeyDown(KeyCode.A))
+        else if(Input.GetKey(KeyCode.A) && !Physics.Raycast(transform.position, -Vector3.right, 0.75f, 1 << 9))
         {
             direction = -Vector3.right;
         }
-        else if(Input.GetKeyDown(KeyCode.D))
+        else if(Input.GetKey(KeyCode.D) && !Physics.Raycast(transform.position, Vector3.right, 0.75f, 1 << 9))
         {
             direction = Vector3.right;
         }
@@ -75,7 +92,10 @@ public class PacMan : MonoBehaviour
         if(direction != Vector3.zero)
         {
             ChangeOrientation(transform.position + direction);
-            transform.Translate(direction * speed * Time.deltaTime);
+            if(!Physics.Raycast(transform.position, direction, 0.55f, 1 << 9))
+            {
+                transform.Translate(direction * speed * Time.deltaTime);
+            }
         }
     }
 
@@ -100,13 +120,16 @@ public class PacMan : MonoBehaviour
         if(collision.transform.tag == "PacGhost")
         {
             deathSound.Play ();
-            TeleportToSpawnPoint();
+            if(networkView.isMine)
+            {
+                networkView.RPC("ActivateRespawnTimer", RPCMode.AllBuffered);
+            }
         }
     }
 
     void BoostSpeed()
     {
-        timer = boostDuration;
+        boostTimer = boostDuration;
     }
 
     void ChangeOrientation(Vector3 lookAtPoint)
@@ -148,16 +171,21 @@ public class PacMan : MonoBehaviour
         powerUpSound.Play();
     }
 
-    void TeleportToSpawnPoint()
+    [RPC]
+    void ActivateRespawnTimer()
     {
-        transform.position = spawnPoint.transform.position;
-        networkView.RPC("TeleportToSpawnPointNetwork", RPCMode.OthersBuffered);
+        GetComponent<SphereCollider>().enabled = false;
+        transform.FindChild("PacManModel").gameObject.SetActive(false);
+        respawnTimer = respawnDuration;
     }
 
     [RPC]
-    void TeleportToSpawnPointNetwork()
+    void Respawn()
     {
         transform.position = spawnPoint.transform.position;
+        GetComponent<SphereCollider>().enabled = true;
+        transform.FindChild("PacManModel").gameObject.SetActive(true);
+        direction = Vector3.zero;
     }
 
     [RPC]

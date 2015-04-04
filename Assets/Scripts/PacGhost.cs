@@ -16,11 +16,6 @@ public class PacGhost : MonoBehaviour
 
     void Update()
     {
-        if(Input.GetKeyDown("k"))
-        {
-            SetColor (Color.grey);
-        }
-
         if(!Network.isServer)
         {
             return;
